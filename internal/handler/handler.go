@@ -8,6 +8,7 @@ import (
 
 	//"github.com/bootcamp-go/go-web/internal/products"
 	"github.com/bootcamp-go/go-web/internal/products"
+	"github.com/go-chi/chi/v5"
 	//. "github.com/bootcamp-go/go-web/internal/products"
 )
 
@@ -54,8 +55,7 @@ func (h *MyHandler) Get() http.HandlerFunc {
 func (h *MyHandler) GetById() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		//idStr := chi.URLParam(r, "productId")
-		idStr := "123"
+		idStr := chi.URLParam(r, "productId")
 
 		id, err := strconv.Atoi(idStr)
 		if err != nil {

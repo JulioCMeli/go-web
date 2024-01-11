@@ -45,8 +45,8 @@ func (h *MyHandler) Get() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		code := http.StatusOK
 		body := MyResponse{Message: "OK", Data: h.data}
-		w.WriteHeader(code)
 		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(code)
 		json.NewEncoder(w).Encode(body)
 	}
 }
@@ -78,8 +78,8 @@ func (h *MyHandler) GetById() http.HandlerFunc {
 		if wasFound {
 			code := http.StatusOK
 			body := MyResponse{Message: "OK", Data: pRes}
-			w.WriteHeader(code)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(code)
 			json.NewEncoder(w).Encode(body)
 		} else {
 			code := http.StatusNotFound
@@ -116,8 +116,8 @@ func (h *MyHandler) GetByQuery() http.HandlerFunc {
 		if wasFound {
 			code := http.StatusOK
 			body := MyResponse{Message: "OK", Data: pRes}
-			w.WriteHeader(code)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(code)
 			json.NewEncoder(w).Encode(body)
 		} else {
 			code := http.StatusNotFound

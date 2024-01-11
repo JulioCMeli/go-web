@@ -2,14 +2,14 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strconv"
 
-	//"github.com/bootcamp-go/go-web/internal/products"
 	"github.com/bootcamp-go/go-web/internal/products"
 	"github.com/go-chi/chi/v5"
-	//. "github.com/bootcamp-go/go-web/internal/products"
 )
 
 // MyHandler is a handler with a map of users as data
@@ -128,4 +128,130 @@ func (h *MyHandler) GetByQuery() http.HandlerFunc {
 		}
 
 	}
+}
+
+type BodyRequestProductJSON struct {
+	Name        string  `json:"name"`
+	Quantity    int     `json:"quantity"`
+	CodeValue   string  `json:"code_value"`
+	IsPublished bool    `json:"is_published"`
+	Expiration  string  `json:"expiration"`
+	Price       float64 `json:"price"`
+}
+
+// Post returns a handler for the POST /products route
+func (h *MyHandler) Post() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		var body BodyRequestProductJSON
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			w.Header().Set("Content-Type", "text/plain")
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("invalid body"))
+			return
+		}
+
+		fmt.Println(body)
+
+		// Get next or avaliable id
+		var nextId = getNextId(&h.data)
+
+		// Serealizing
+		newProduct := products.Product{
+			Id:          nextId,
+			Name:        body.Name,
+			Quantity:    body.Quantity,
+			CodeValue:   body.CodeValue,
+			IsPublished: body.IsPublished,
+			Expiration:  body.Expiration,
+			Price:       body.Price,
+		}
+
+		var err = validBody(&newProduct)
+		var isCodeExist = codeExist(newProduct.CodeValue, &h.data)
+
+		var code = http.StatusInternalServerError
+		var bodyR any
+
+		if err != nil {
+			code = http.StatusBadRequest
+			bodyR = MyResponse{Message: err.Error(), Data: nil}
+		} else if isCodeExist {
+			code = http.StatusConflict
+			bodyR = MyResponse{Message: "El campo code_value debe ser único para cada producto.", Data: nil}
+		} else {
+			//Saving new product
+			h.data = append(h.data, newProduct)
+			// send response
+			code = http.StatusCreated
+			bodyR = MyResponse{Message: "OK", Data: newProduct}
+
+		}
+
+		w.WriteHeader(code)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(bodyR)
+
+	}
+}
+
+func validBody(p *products.Product) error {
+
+	// fmt.Println("validate", *p)
+	// fmt.Println("validate", p.Quantity)
+
+	if p.Name == "" {
+		return errors.New("name is required")
+	}
+	if p.Quantity <= 0 {
+		return errors.New("quantity must be greater than 0")
+	}
+	if p.CodeValue == "" {
+		return errors.New("codeValue is required")
+	}
+	// if p.IsPublished == "" {
+	// 	return errors.New("IsPublishe is required")
+	// }
+	if !isAValidDate(p.Expiration) {
+		return errors.New("expiration is required or is not valid format DD/MM/YYYY")
+	}
+	if p.Price <= 0.0 {
+		return errors.New("price must be greater than 0.0")
+	}
+
+	return nil
+
+}
+
+func getNextId(lstProducts *[]products.Product) int {
+	r := 1
+	for _, p := range *lstProducts {
+		if p.Id > r {
+			break
+		} else {
+			r++
+		}
+	}
+
+	return r
+}
+
+func codeExist(code string, lstProducts *[]products.Product) bool {
+	r := false
+	for _, p := range *lstProducts {
+		if p.CodeValue == code {
+			r = true
+			break
+		}
+	}
+
+	return r
+}
+
+func isAValidDate(dateStr string) bool {
+
+	var patter = regexp.MustCompile(`^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}$`)
+
+	return patter.MatchString(dateStr)
+
 }

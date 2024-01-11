@@ -18,6 +18,7 @@ func main() {
 	r.Get("/", h.Get())
 	r.Get("/products/{productId}", h.GetById())
 	r.Get("/products", h.GetByQuery())
+	r.Post("/products", h.Post())
 
 	http.ListenAndServe(":8080", r)
 }

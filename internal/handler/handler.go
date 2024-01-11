@@ -84,8 +84,8 @@ func (h *MyHandler) GetById() http.HandlerFunc {
 		} else {
 			code := http.StatusNotFound
 			body := MyResponse{Message: "Not Found", Data: nil}
+			w.Header().Set("content-type", "application/json")
 			w.WriteHeader(code)
-			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(body)
 		}
 
@@ -122,8 +122,8 @@ func (h *MyHandler) GetByQuery() http.HandlerFunc {
 		} else {
 			code := http.StatusNotFound
 			body := MyResponse{Message: "Not Found", Data: nil}
-			w.WriteHeader(code)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(code)
 			json.NewEncoder(w).Encode(body)
 		}
 
@@ -188,8 +188,8 @@ func (h *MyHandler) Post() http.HandlerFunc {
 
 		}
 
-		w.WriteHeader(code)
 		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(code)
 		json.NewEncoder(w).Encode(bodyR)
 
 	}

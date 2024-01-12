@@ -119,7 +119,7 @@ func (h *ProductHandler) Put() http.HandlerFunc {
 
 		fmt.Println(body)
 
-		_, err2 := h.rp.GetById(body.Id)
+		pRes, err2 := h.rp.GetById(body.Id)
 
 		if err2 == nil {
 
@@ -143,7 +143,7 @@ func (h *ProductHandler) Put() http.HandlerFunc {
 			if err != nil {
 				code = http.StatusBadRequest
 				bodyR = MyResponse{Message: err.Error(), Data: nil}
-			} else if isCodeExist {
+			} else if isCodeExist && newProduct.Id != pRes.Id {
 				code = http.StatusConflict
 				bodyR = MyResponse{Message: "El campo code_value debe ser único para cada producto.", Data: nil}
 			} else {

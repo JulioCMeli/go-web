@@ -89,16 +89,7 @@ func (h *ProductRepository) Save(product products.Product) error {
 }
 
 func (h *ProductRepository) GetNextId() int {
-	r := 1
-	for _, p := range h.data {
-		if p.Id > r {
-			break
-		} else {
-			r++
-		}
-	}
-
-	return r
+	return h.data[len(h.data)-1].Id + 1
 }
 
 func (h *ProductRepository) DeleteById(id int) {

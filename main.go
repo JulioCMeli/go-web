@@ -24,6 +24,7 @@ func main() {
 	r.Post("/products", h.Post())
 	r.Delete("/products/{productId}", h.DeleteById())
 	r.Put("/products", h.Put())
+	r.Patch("/products", h.Patch())
 
 	http.ListenAndServe(":8080", r)
 }

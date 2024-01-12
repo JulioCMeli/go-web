@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/bootcamp-go/go-web/internal/handler"
 	"github.com/bootcamp-go/go-web/internal/repository"
@@ -10,6 +12,13 @@ import (
 )
 
 func main() {
+
+	var token string = "GO_API_TOKEN_1"
+	os.Setenv(token, "julio")
+
+	// Obtener el valor de una variable de entorno
+	valorEntorno := os.Getenv(token)
+	fmt.Println("Valor de la token/variable de entorno:", valorEntorno)
 
 	r := chi.NewRouter()
 

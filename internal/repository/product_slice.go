@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/bootcamp-go/go-web/internal/products"
+	"github.com/bootcamp-go/go-web/internal/storage"
 )
 
 // ProductRepository is a struct with a slice of products
@@ -17,7 +18,7 @@ func NewProductRepository() *ProductRepository {
 
 	var repository ProductRepository
 
-	repository.data, _ = products.ReadJson()
+	repository.data, _ = storage.ReadJson()
 
 	return &repository
 }
@@ -84,7 +85,7 @@ func (h *ProductRepository) Save(product products.Product) error {
 	} else {
 		h.data = append(h.data, product)
 	}
-
+	storage.SaveJson(h.data)
 	return nil
 }
 
@@ -100,6 +101,7 @@ func (h *ProductRepository) DeleteById(id int) {
 
 		}
 	}
+	storage.SaveJson(h.data)
 
 }
 

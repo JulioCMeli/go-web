@@ -67,8 +67,24 @@ func (h *ProductRepository) GetByQuery(id int, priceGt float64) (products.Produc
 }
 
 // Post returns a handler for the POST /products route
-func (h *ProductRepository) Save(p products.Product) error {
-	h.data = append(h.data, p)
+func (h *ProductRepository) Save(product products.Product) error {
+
+	wasFound := false
+	index := 0
+	for i, p := range h.data {
+		if p.Id == product.Id {
+			index = i
+			wasFound = true
+			break
+		}
+	}
+
+	if wasFound {
+		h.data[index] = product
+	} else {
+		h.data = append(h.data, product)
+	}
+
 	return nil
 }
 

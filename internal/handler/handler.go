@@ -105,6 +105,71 @@ func (h *ProductHandler) DeleteById() http.HandlerFunc {
 	}
 }
 
+// Put returns a handler for the PUT /products/ route
+func (h *ProductHandler) Put() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		var body products.Product
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			w.Header().Set("Content-Type", "text/plain")
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("invalid body"))
+			return
+		}
+
+		fmt.Println(body)
+
+		_, err2 := h.rp.GetById(body.Id)
+
+		if err2 == nil {
+
+			// Serealizing
+			newProduct := products.Product{
+				Id:          body.Id,
+				Name:        body.Name,
+				Quantity:    body.Quantity,
+				CodeValue:   body.CodeValue,
+				IsPublished: body.IsPublished,
+				Expiration:  body.Expiration,
+				Price:       body.Price,
+			}
+
+			var err = validBody(&newProduct)
+			var isCodeExist = h.rp.IsCodeExist(newProduct.CodeValue)
+
+			var code = http.StatusInternalServerError
+			var bodyR any
+
+			if err != nil {
+				code = http.StatusBadRequest
+				bodyR = MyResponse{Message: err.Error(), Data: nil}
+			} else if isCodeExist {
+				code = http.StatusConflict
+				bodyR = MyResponse{Message: "El campo code_value debe ser único para cada producto.", Data: nil}
+			} else {
+				//Saving new product
+				h.rp.Save(newProduct)
+				// send response
+				code = http.StatusCreated
+				bodyR = MyResponse{Message: "OK", Data: newProduct}
+
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(code)
+			json.NewEncoder(w).Encode(bodyR)
+
+		} else {
+			code := http.StatusNotFound
+			body := MyResponse{Message: "Not Found", Data: err2.Error()}
+			w.Header().Set("content-type", "application/json")
+			w.WriteHeader(code)
+			json.NewEncoder(w).Encode(body)
+		}
+
+	}
+}
+
 // GetByQuery returns a handler for the GET /products?productId={id} route
 func (h *ProductHandler) GetByQuery() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -134,7 +199,7 @@ func (h *ProductHandler) GetByQuery() http.HandlerFunc {
 	}
 }
 
-type BodyRequestProductJSON struct {
+type BodyRequestNewProductJSON struct {
 	Name        string  `json:"name"`
 	Quantity    int     `json:"quantity"`
 	CodeValue   string  `json:"code_value"`
@@ -147,7 +212,7 @@ type BodyRequestProductJSON struct {
 func (h *ProductHandler) Post() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		var body BodyRequestProductJSON
+		var body BodyRequestNewProductJSON
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			w.Header().Set("Content-Type", "text/plain")
 			w.WriteHeader(http.StatusBadRequest)

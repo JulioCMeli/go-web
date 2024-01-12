@@ -23,6 +23,7 @@ func main() {
 	r.Get("/products", h.GetByQuery())
 	r.Post("/products", h.Post())
 	r.Delete("/products/{productId}", h.DeleteById())
+	r.Put("/products", h.Put())
 
 	http.ListenAndServe(":8080", r)
 }

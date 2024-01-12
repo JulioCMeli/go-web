@@ -8,7 +8,7 @@ import (
 	"github.com/bootcamp-go/go-web/internal/products"
 )
 
-var fileName = "products2.json"
+var fileName = "/Users/jdiazaltamir/Desktop/go-web/products2.json"
 
 func ReadJson() ([]products.Product, error) {
 	// Leer el contenido del archivo JSON
@@ -29,10 +29,10 @@ func ReadJson() ([]products.Product, error) {
 	}
 
 	// Imprimir el slice de personas
-	fmt.Println("Datos parseados:")
-	for _, p := range products {
-		fmt.Printf("%v \n", p)
-	}
+	// fmt.Println("Datos parseados:")
+	// for _, p := range products {
+	// 	fmt.Printf("%v \n", p)
+	// }
 
 	return products, nil
 }

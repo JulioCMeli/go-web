@@ -14,11 +14,11 @@ type ProductRepository struct {
 }
 
 // NewProductRepository returns a new ProductRepository
-func NewProductRepository() *ProductRepository {
+func NewProductRepository(lstProducts *[]products.Product) *ProductRepository {
 
 	var repository ProductRepository
 
-	repository.data, _ = storage.ReadJson()
+	repository.data = *lstProducts
 
 	return &repository
 }

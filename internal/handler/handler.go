@@ -101,7 +101,7 @@ func (h *ProductHandler) DeleteById() http.HandlerFunc {
 		}
 
 		h.rp.DeleteById(id)
-		code := http.StatusOK
+		code := http.StatusNoContent
 		body := MyResponse{Message: "OK", Data: nil}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(code)

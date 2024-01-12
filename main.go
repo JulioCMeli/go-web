@@ -7,6 +7,7 @@ import (
 
 	"github.com/bootcamp-go/go-web/internal/handler"
 	"github.com/bootcamp-go/go-web/internal/repository"
+	"github.com/bootcamp-go/go-web/internal/storage"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -22,7 +23,9 @@ func main() {
 
 	r := chi.NewRouter()
 
-	rp := repository.NewProductRepository()
+	data, _ := storage.ReadJson()
+
+	rp := repository.NewProductRepository(&data)
 
 	h := handler.NewProductHandler(rp)
 

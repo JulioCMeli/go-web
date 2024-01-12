@@ -9,26 +9,25 @@ import (
 	"strconv"
 
 	"github.com/bootcamp-go/go-web/internal/products"
+	"github.com/bootcamp-go/go-web/internal/repository"
 	"github.com/go-chi/chi/v5"
 )
 
-// MyHandler is a handler with a map of users as data
-type MyHandler struct {
-	data []products.Product
+// ProductHandler is a handler with a map of users as data
+type ProductHandler struct {
+	rp repository.ProductRepository
 }
 
-// NewHandler returns a new MyHandler
-func NewHandler() *MyHandler {
+// NewHandler returns a new ProductHandler
+func NewProductHandler(rp *repository.ProductRepository) *ProductHandler {
 
-	var myHandler MyHandler
-
-	myHandler.data, _ = products.ReadJson()
-
+	var myHandler ProductHandler
+	myHandler.rp = *rp
 	return &myHandler
 }
 
 // Get returns a handler for the GET /ping route
-func (h *MyHandler) Ping() http.HandlerFunc {
+func (h *ProductHandler) Ping() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("pong"))
 	}
@@ -41,10 +40,10 @@ type MyResponse struct {
 }
 
 // Get returns a handler for the GET /products route
-func (h *MyHandler) Get() http.HandlerFunc {
+func (h *ProductHandler) Get() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		code := http.StatusOK
-		body := MyResponse{Message: "OK", Data: h.data}
+		body := MyResponse{Message: "OK", Data: h.rp.GetAll()}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(code)
 		json.NewEncoder(w).Encode(body)
@@ -52,7 +51,7 @@ func (h *MyHandler) Get() http.HandlerFunc {
 }
 
 // Get returns a handler for the GET /products/{productId} route
-func (h *MyHandler) GetById() http.HandlerFunc {
+func (h *ProductHandler) GetById() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		idStr := chi.URLParam(r, "productId")
@@ -64,18 +63,9 @@ func (h *MyHandler) GetById() http.HandlerFunc {
 			return
 		}
 
-		fmt.Println(id)
-		var pRes products.Product
-		wasFound := false
-		for _, p := range h.data {
-			if p.Id == id {
-				pRes = p
-				wasFound = true
-				break
-			}
-		}
+		pRes, err := h.rp.GetById(id)
 
-		if wasFound {
+		if err == nil {
 			code := http.StatusOK
 			body := MyResponse{Message: "OK", Data: pRes}
 			w.Header().Set("Content-Type", "application/json")
@@ -83,7 +73,7 @@ func (h *MyHandler) GetById() http.HandlerFunc {
 			json.NewEncoder(w).Encode(body)
 		} else {
 			code := http.StatusNotFound
-			body := MyResponse{Message: "Not Found", Data: nil}
+			body := MyResponse{Message: "Not Found", Data: err.Error()}
 			w.Header().Set("content-type", "application/json")
 			w.WriteHeader(code)
 			json.NewEncoder(w).Encode(body)
@@ -92,8 +82,31 @@ func (h *MyHandler) GetById() http.HandlerFunc {
 	}
 }
 
+// Delte returns a handler for the DELETE /products/{productId} route
+func (h *ProductHandler) DeleteById() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		idStr := chi.URLParam(r, "productId")
+
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			fmt.Println("Error al convertir a entero:", err)
+			// Manejar el error según sea necesario
+			return
+		}
+
+		h.rp.DeleteById(id)
+		code := http.StatusOK
+		body := MyResponse{Message: "OK", Data: nil}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(code)
+		json.NewEncoder(w).Encode(body)
+
+	}
+}
+
 // GetByQuery returns a handler for the GET /products?productId={id} route
-func (h *MyHandler) GetByQuery() http.HandlerFunc {
+func (h *ProductHandler) GetByQuery() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		idStr := r.URL.Query().Get("productId")
@@ -102,18 +115,9 @@ func (h *MyHandler) GetByQuery() http.HandlerFunc {
 		id, _ := strconv.Atoi(idStr)
 		priceGt, _ := strconv.Atoi(priceGtStr)
 
-		fmt.Println(id)
-		fmt.Println(priceGt)
-		var pRes products.Product
-		wasFound := false
-		for _, p := range h.data {
-			if p.Id == id && p.Price >= float64(priceGt) {
-				pRes = p
-				wasFound = true
-				break
-			}
-		}
-		if wasFound {
+		pRes, err := h.rp.GetByQuery(id, float64(priceGt))
+
+		if err == nil {
 			code := http.StatusOK
 			body := MyResponse{Message: "OK", Data: pRes}
 			w.Header().Set("Content-Type", "application/json")
@@ -121,7 +125,7 @@ func (h *MyHandler) GetByQuery() http.HandlerFunc {
 			json.NewEncoder(w).Encode(body)
 		} else {
 			code := http.StatusNotFound
-			body := MyResponse{Message: "Not Found", Data: nil}
+			body := MyResponse{Message: "Not Found", Data: err.Error()}
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(code)
 			json.NewEncoder(w).Encode(body)
@@ -140,7 +144,7 @@ type BodyRequestProductJSON struct {
 }
 
 // Post returns a handler for the POST /products route
-func (h *MyHandler) Post() http.HandlerFunc {
+func (h *ProductHandler) Post() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		var body BodyRequestProductJSON
@@ -154,7 +158,7 @@ func (h *MyHandler) Post() http.HandlerFunc {
 		fmt.Println(body)
 
 		// Get next or avaliable id
-		var nextId = getNextId(&h.data)
+		var nextId = h.rp.GetNextId()
 
 		// Serealizing
 		newProduct := products.Product{
@@ -168,7 +172,7 @@ func (h *MyHandler) Post() http.HandlerFunc {
 		}
 
 		var err = validBody(&newProduct)
-		var isCodeExist = codeExist(newProduct.CodeValue, &h.data)
+		var isCodeExist = h.rp.IsCodeExist(newProduct.CodeValue)
 
 		var code = http.StatusInternalServerError
 		var bodyR any
@@ -181,7 +185,7 @@ func (h *MyHandler) Post() http.HandlerFunc {
 			bodyR = MyResponse{Message: "El campo code_value debe ser único para cada producto.", Data: nil}
 		} else {
 			//Saving new product
-			h.data = append(h.data, newProduct)
+			h.rp.Save(newProduct)
 			// send response
 			code = http.StatusCreated
 			bodyR = MyResponse{Message: "OK", Data: newProduct}
@@ -221,31 +225,6 @@ func validBody(p *products.Product) error {
 
 	return nil
 
-}
-
-func getNextId(lstProducts *[]products.Product) int {
-	r := 1
-	for _, p := range *lstProducts {
-		if p.Id > r {
-			break
-		} else {
-			r++
-		}
-	}
-
-	return r
-}
-
-func codeExist(code string, lstProducts *[]products.Product) bool {
-	r := false
-	for _, p := range *lstProducts {
-		if p.CodeValue == code {
-			r = true
-			break
-		}
-	}
-
-	return r
 }
 
 func isAValidDate(dateStr string) bool {

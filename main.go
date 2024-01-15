@@ -18,10 +18,14 @@ func main() {
 	os.Setenv(token, "julio")
 
 	// Obtener el valor de una variable de entorno
-	valorEntorno := os.Getenv(token)
-	fmt.Println("Valor de la token/variable de entorno:", valorEntorno)
+	tokenValue := os.Getenv(token)
+	fmt.Println("Valor de la token/variable de entorno:", tokenValue)
+
+	auth := handler.NewAuthenticator(tokenValue)
 
 	r := chi.NewRouter()
+
+	r.Use(auth.Auth)
 
 	data, _ := storage.ReadJson()
 

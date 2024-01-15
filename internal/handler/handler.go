@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"regexp"
 	"strconv"
 
@@ -86,10 +85,6 @@ func (h *ProductHandler) GetById() http.HandlerFunc {
 // Delte returns a handler for the DELETE /products/{productId} route
 func (h *ProductHandler) DeleteById() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		if !IsValidApiToken(r.Header.Get("token"), w) {
-			return
-		}
 
 		idStr := chi.URLParam(r, "productId")
 
@@ -178,10 +173,6 @@ func (h *ProductHandler) Put() http.HandlerFunc {
 // Patch returns a handler for the Patch /products/ route
 func (h *ProductHandler) Patch() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		if !IsValidApiToken(r.Header.Get("token"), w) {
-			return
-		}
 
 		var body products.Product
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -286,10 +277,6 @@ type BodyRequestNewProductJSON struct {
 func (h *ProductHandler) Post() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		if !IsValidApiToken(r.Header.Get("token"), w) {
-			return
-		}
-
 		var body BodyRequestNewProductJSON
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			w.Header().Set("Content-Type", "text/plain")
@@ -375,22 +362,5 @@ func isAValidDate(dateStr string) bool {
 	var patter = regexp.MustCompile(`^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}$`)
 
 	return patter.MatchString(dateStr)
-
-}
-
-func IsValidApiToken(tokenRequestValue string, w http.ResponseWriter) bool {
-	var token string = "GO_API_TOKEN_1"
-	tokenValue := os.Getenv(token)
-
-	if tokenValue != tokenRequestValue {
-		code := http.StatusForbidden
-		body := MyResponse{Message: "Invalid token", Data: nil}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(code)
-		json.NewEncoder(w).Encode(body)
-		return false
-	}
-
-	return true
 
 }
